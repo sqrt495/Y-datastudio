@@ -1,0 +1,51 @@
+;(function($){
+    'use strict';
+
+    if ( window.log !== undefined ) console.warn('Global variable "log" is used');
+    window.log = console.log;
+
+    if ( window.warn !== undefined ) console.warn('Global variable "warn" is used');
+    window.warn = console.warn;
+
+    if ( window.error !== undefined ) console.warn('Global variable "error" is used');
+    window.error = console.error;
+
+    window.logs = new (function(){
+
+        var
+            NO_CATEGORY = 'orphan',
+            logs = {};
+
+        this.add = function(callBack, category) {
+
+            if ( typeof category === 'undefined' )
+                category = NO_CATEGORY;
+
+            if ( ! (category in logs) )
+                logs[category] = [];
+
+            logs[category].push(callBack);
+
+        }
+
+        this.show = function() {
+            for (var c in logs ) {
+
+                if (c !== NO_CATEGORY && console.groupCollapsed)
+                    console.groupCollapsed( c );
+
+                for (var i = 0; i < logs[c].length; i++)
+                    logs[c][i]();
+
+                if (c !== NO_CATEGORY && console.groupCollapsed)
+                    console.groupEnd();
+
+            }
+        }
+
+        this.log = console.log ? console.log : $.noop;
+        this.assert = console.assert ? console.assert : $.noop;
+
+    });
+
+}(jQuery));

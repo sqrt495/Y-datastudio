@@ -1,0 +1,311 @@
+;(function($){
+    "use strict";
+
+    $.lib = {};
+    $.lib.warn = function( msg ) {
+        console.warn( msg );
+    }
+    $.lib.test_email = function( text ) {
+        var email_regxp = new RegExp("^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$", "i");
+        return email_regxp.test( text );
+    }
+    $.lib.create_tmpl = function( name_tmpl, es, $context_tmpl ) {
+
+        var $context = $('body'),
+            tmpl;
+
+        var
+            tmpl_regexp = new RegExp('\\<\\!\\-\\-\\s*tmpl\\s*\\#' + name_tmpl + '[\\n\\r\\f]*([\\s\\S]*?)[\\n\\r\\f]*\\-\\-\\>');
+
+        if ( $context_tmpl )
+            $context = $context_tmpl;
+
+        if ( $context.find( '#' + name_tmpl ).length ) {
+
+            tmpl = $context.find( '#' + name_tmpl).html();
+
+        } else {
+
+            tmpl = ( $context.html().replace(/[\n\r\f]/g,'') ).match( tmpl_regexp );
+            if ( tmpl && length in tmpl )
+                tmpl = tmpl[1];
+
+        }
+
+        if ( tmpl && es ) {
+            for (var p in es) {
+                if ( typeof p === 'string' && ( typeof es[p] === 'string' || typeof es[p] === 'number' ) ) {
+                    tmpl = tmpl.replace(new RegExp('\\{' + p + '\\}', 'g'), es[p] );
+                }
+            }
+        }
+        if ( !tmpl )
+            $.lib.warn( 'create_tmpl ' + name_tmpl + ': ' + 'tmpl: ' + tmpl );
+
+        return tmpl;
+    }
+
+    $.lib.alert = function( data ) {
+
+        var $alert_box = $('#alerts-box');
+        var $alert = $( $.lib.create_tmpl('alert', data) ),
+            hide_interval;
+
+        alert_hide();
+
+        if ( data.error )
+            $alert.addClass('-error');
+
+        $alert.bind('click', function(){
+            alert_hide();
+        });
+
+        if ( $alert_box.find('#' + data.id).size() )
+            remove_alert( $alert_box.find('#' + data.id), -1 );
+
+        $alert_box.append( $alert );
+
+        alert_show();
+
+        hide_interval = setTimeout(function(){
+            alert_hide();
+            remove_alert();
+        }, 3000);
+
+        function alert_show( $obj ) {
+            var $o = $obj || $alert;
+
+            $o.css('right', 0 );
+        }
+
+        function alert_hide( $obj ) {
+            var $o = $obj || $alert;
+            $o.css('right', -$alert.width() - 100 );
+        }
+
+        function remove_alert( $obj, int ) {
+            var $o = $obj || $alert;
+
+            var int = int == undefined ? 500 : int ;
+
+            clearInterval( hide_interval );
+
+            if ( int > 0 )
+                setTimeout(function(){
+                    $o.remove();
+                }, int);
+            else {
+                $o.remove();
+            }
+        }
+
+    }
+    $.lib.add_csrf = function( param ) {
+        param._csrf = $("[name=csrf-token]").attr('content');
+        return param;
+    }
+    $.lib.add_csrf_4_form = function( param ) {
+        param.push({
+            'name': '_csrf',
+            'value': $("[name=csrf-token]").attr('content')
+        });
+        return param;
+    }
+
+    $.lib.toIsoDate = function( date ) {
+
+        var dd = date.getDate();
+        if (dd < 10) dd = '0' + dd;
+
+        var mm = date.getMonth() + 1;
+        if (mm < 10) mm = '0' + mm;
+
+        var yy = date.getFullYear();
+
+        return yy + '-' + mm + '-' + dd ;
+
+    }
+
+    $.lib.masonry = function( container_id, param ){
+
+        var param = param || {},
+            $container = $( container_id );
+
+        Masonry.data( $container[0] ).destroy();
+        new Masonry( container_id, JSON.parse( $container.attr('data-masonry') ) );
+
+        if ( param.scrollTop != undefined )
+            $(document).scrollTop( param.scrollTop );
+
+    }
+
+    //append v2
+    $.lib.rank = function(v) {
+        return (''+v).replace(/(\d{1,3}(?=(\d{3})+(?:\.\d|\b)))/g,"\$1 ");
+    }
+    $.lib.round = function(v, direct, q) {
+        var q = q || 1000;
+
+        if ( direct == '-' )
+            return Math.floor( v/q );
+        if ( direct == '+' )
+            return Math.ceil( v/q );
+
+        return Math.round( v/q );
+    }
+    $.lib.round_0 = function(v, direct, q) {
+        var q = q || 1000;
+
+        if ( v <= q ) return Math.round(v);
+
+        return $.lib.round(v, direct, q) * 1000;
+    }
+
+    $.lib.min = function( a ){
+        return Math.min.apply( Math, a );
+    }
+    $.lib.max = function( a ){
+        return Math.max.apply( Math, a );
+    }
+    $.lib.sum = function(a){
+        return a.reduce(function(a,b){return a+b});
+    }
+    $.lib.z = function(v) {
+        return v < 10 ? '0' + v : '' + v;
+    }
+
+    $.lib.numberToShort = function(n, show_short_rank, rank, fixed ) {
+
+        var rank = rank || 1000;
+        var fixed = fixed || 1;
+
+        var value_short = n;
+
+        if ( value_short < rank * 1000 ) {
+            value_short = (value_short/rank).toFixed( fixed );
+        }
+
+        if ( show_short_rank) {
+            var rank_name = $.lib.rank_shorts[$.lib.lang.get_locale()][rank] || '';
+            if (rank_name) value_short = value_short + ' ' + rank_name;
+        }
+
+        return value_short;
+    }
+    $.lib.numberToFormatGraph = function(value, max_value, show_short_rank ) {
+        var res = value;
+
+        if ( max_value > 100 && max_value < 1000 )
+
+             res = $.lib.numberToShort(value, show_short_rank, 1000, 1);
+
+        else
+        if ( max_value >= 1000 && max_value < 1000000 )
+
+            res = $.lib.numberToShort(value, show_short_rank, 1000, 1);
+
+        else
+        if ( max_value >= 1000000 && max_value < 1000000000 )
+
+            res = $.lib.numberToShort(value, show_short_rank, 1000000, 1);
+
+        else
+        if ( max_value >= 1000000000 )
+
+            res = $.lib.numberToShort(value, show_short_rank, 1000000000, 1);
+
+        return res || '--';
+    }
+
+    $.lib.getGet = function() {
+        var array4get = document.location.search.replace(/^\?/,'').split('&');
+        var get = {};
+        array4get.map(function(a){
+            var a = a.split('=');
+            if (a.length) get[a[0]] = a[1];
+        })
+        return get;
+    }
+
+    var date = {};
+    var lang = {};
+    date.WEEK_SHORT_NAME = {
+        'ru': ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+        'en': ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+    };
+    date.MONTH_SHORT_NAME = {
+        'ru': ['Янв', 'Фев', 'Мрт', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Нбр', 'Дек'],
+        'en': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
+    }
+
+    date.dateToDot = function( e ){
+        var e = new Date(e);
+        return ( $.lib.z( e.getDate() )  + '.' + $.lib.z( e.getMonth() + 1 ) + '.' + e.getFullYear() );
+    }
+    date.dateToSimpleISO = function( e ){
+        var e = new Date(e);
+        return ( e.getFullYear()  + '-' + $.lib.z( e.getMonth() + 1 ) + '-' + $.lib.z( e.getDate() ) );
+    }
+    date.getDayWeek = function( e ){
+        return new Date( e ).getDay();
+    }
+    date.addDays = function( e, days ){
+        var e = new Date( e );
+        e.setDate( e.getDate() + days );
+        return e.getTime();
+    }
+
+    //EKB
+    lang.get_id = function(){
+        var lang = {
+            'ru-RU': 0,
+            'en-US': 1,
+        },
+        site_lang = $('html').attr('lang');
+
+        if ( site_lang in lang)
+            return lang[site_lang];
+
+        return 0;
+    }
+    lang.get_locale = function(){
+        return $('html').attr('lang') || 'ru-RU';
+    }
+    lang.get_short_locale = function(){
+        return lang.get_locale().split('-')[0];
+    }
+
+    date.parseDateForEKB = function( date ) {
+        date = new Date( date );
+        return date.getFullYear() + '.' + $.lib.z(date.getMonth() + 1) + '.' + $.lib.z(date.getDate())
+    }
+    date.parseDateFromEKB = function( d ) {
+
+        var d = d.split('T');
+        d = d[0].split('.');
+
+        return new Date(d[0], $.lib.z( d[1] - 1 ), $.lib.z( d[2] ));
+    }
+
+    $.lib.date = date;
+    $.lib.lang = lang;
+
+    $.lib.rank_shorts =
+    {
+        'ru-RU': {
+            '1000': 'тыс',
+            '1000000': 'млн',
+            '1000000000': 'млрд',
+            '1000000000000': 'трл',
+            '1000000000000000': 'квд'
+        },
+        'en-US': {
+            '1000': 'tsd',
+            '1000000': 'mln',
+            '1000000000': 'bln',
+            '1000000000000': 'trn',
+            '1000000000000000': 'qdr'
+        }
+    };
+
+})(jQuery);

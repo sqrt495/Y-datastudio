@@ -1,0 +1,1143 @@
+;(function ($) {
+    'use strict';
+
+    var $body = $('body');
+
+    //main ready
+    $(function () {
+
+        $('.datepicker').datepicker({
+            'language': $.lib.lang.get_locale(),
+            'format': 'dd M yyyy',
+            'autoclose': true,
+            'keepEmptyValues': true
+        }).on('change', function (e) {
+
+            if ($(this).attr('data-value-field'))
+                $($(this).attr('data-value-field')).val($(this).datepicker("getDate").valueOf());
+
+        });
+
+        //select-region-demonstrators
+        $('#select-region-demonstrators').on('change', function () {
+            document.location = $(this).val();
+        });
+
+    });
+
+    //on select period init for widget
+
+    function Xhr() {
+        var t = this;
+
+        t.xhr = null;
+        t.url = '';
+
+        t.send = function (param) {
+
+            _abortSend();
+
+            var
+                before_send = t.beforeSend(param),
+                param_for_post = before_send[0],
+                param_for_success = before_send[1];
+
+            if(isBanner) {
+                var paramCsrf = $('meta[name="csrf-param"]').attr("content");
+                var tokenCsrf = $('meta[name="csrf-token"]').attr("content");
+                if (paramCsrf && tokenCsrf) {
+                    param_for_post[paramCsrf] = tokenCsrf;
+                }
+            }
+
+            t.xhr = $.post(t.url, param_for_post, function (response) {
+
+                t.success(response, param_for_success, param_for_post);
+
+            }).error(t.error);
+
+        };
+
+        function _abortSend() {
+            if (t.xhr) {
+                t.xhr.abort();
+                t.xhr = null;
+            }
+        }
+
+        //need set
+        t.error = function () {
+        };
+        t.success = function () {
+        };
+        t.beforeSend = function () {
+        };
+
+        $(window).unload(function () {
+            _abortSend()
+        })
+
+    }
+
+    //post for range select
+    function wrapperWidgetColumns($rangeSelectSelector, $widgetSelector, fieldName, $currencySelector) {
+        var xhr_static = new Xhr();
+
+        xhr_static.url = '/ekb/general-stats/';
+        xhr_static.beforeSend = function (param) {
+
+            var param_for_post = {};
+            var param_for_success = {};
+
+            if (param.type == "byWeek")
+                param_for_post.groupBy = 7;
+
+            if (param.type == "byWeekend")
+                param_for_post.groupByWeekend = true;
+
+            param_for_post.periodStart = param.start_date;
+            param_for_post.periodEnd = param.end_date;
+
+            if (param.currid)
+                param_for_post.currid = param.currid;
+
+            $($widgetSelector)
+                .trigger('enableLoader');
+
+            param_for_success.type = param.type;
+
+            return [param_for_post, param_for_success];
+        }
+        xhr_static.error = function () {
+            $($widgetSelector)
+                .trigger('displayError');
+        }
+        xhr_static.success = function (response, param_for_success, param_for_post) {
+
+            var data = JSON.parse(response);
+            data.shift();
+
+            if (data.length < 1) {
+                xhr_static.error();
+                return;
+            }
+
+            var data_for_graph = {
+                values: [],
+                titles: []
+            };
+
+            data.map(function (t) {
+
+                let ds, de;
+                if (t.dateStart.indexOf("T") === -1) {
+                    ds = $.lib.date.parseDateFromEKB(t.dateStart);
+                } else {
+                    ds = moment(t.dateStart, "YYYY.MM.DDTHH:mm:ss").toDate();
+                }
+
+                if (t.dateFinish.indexOf("T") === -1) {
+                    de = $.lib.date.parseDateFromEKB(t.dateFinish);
+                } else {
+                    de = moment(t.dateFinish, "YYYY.MM.DDTHH:mm:ss").toDate();
+                }
+
+                // de = new Date($.lib.date.addDays($.lib.date.parseDateFromEKB(t.dateFinish).getTime(), -1));
+
+                if (param_for_success.type == 5) {
+                    // de = $.lib.date.parseDateFromEKB(t.dateFinish);
+
+                }
+
+                data_for_graph.values.push(+t[fieldName]);
+                data_for_graph.titles.push(
+                    $.lib.z(ds.getDate()) + '.' + $.lib.z(ds.getMonth() + 1) + ' - ' +
+                    $.lib.z(de.getDate()) + '.' + $.lib.z(de.getMonth() + 1)
+                );
+            });
+
+            if (fieldName == 'middlePrice')
+                data_for_graph.precision = 1;
+
+            $($widgetSelector)
+                .trigger('draw', [data_for_graph]);
+
+        }
+
+        $($rangeSelectSelector).on("getGeneralStat", function (e, data) {
+            data.start_date = data.startMoment.format("YYYY-MM-DD");
+            data.end_date = data.endMoment.format("YYYY-MM-DD");
+            xhr_static.send(data);
+        });
+
+        if (!$currencySelector) {
+            $($rangeSelectSelector).on('change', function (e, rangeResult) {
+                xhr_static.send(rangeResult);
+            });
+
+            return;
+        } else {
+            //currency
+            var $dateRange = $($rangeSelectSelector);
+            var $currency = $($currencySelector);
+
+            $dateRange.on('change', function (e, rangeResult) {
+                xhr_static.send(getParam());
+            });
+            $currency.on('changeCurrency', function (e, currid) {
+                xhr_static.send(getParam());
+            });
+        }
+
+        function getParam() {
+            var param = $dateRange.data('SelectRange').getRangeResult();
+            var currency = $currency.data('SelectCurrency');
+
+            if (currency)
+                param.currid = currency.getValue();
+
+            return param;
+        }
+    }
+
+    function getTopFilmsWidgetIndex() {
+        var xhr_static = new Xhr();
+
+        var top_length = +$('#js-top-films-index').attr('data-top-length') || 12;
+
+        xhr_static.url = '/ekb/top-films/';
+        xhr_static.beforeSend = function (param) {
+
+            var param_for_post = {};
+
+            param_for_post.periodStart = $.lib.date.parseDateForEKB(Date.parse(param.start_date));
+            param_for_post.periodEnd = $.lib.date.parseDateForEKB(Date.parse(param.end_date));
+
+            const val = $('[data-range-type="2"] .rs-val').text();
+
+            if (param.rangeType == "week" && val && param.rangeTitle != val) {
+                const tmpData = val.split(" - ");
+                const tmpE = moment(tmpData[1], "DD.MM.YYYY");
+                const tmpS = moment(tmpData[0] + "." + tmpE.year(), "DD.MM.YYYY");
+                if(parseInt(tmpE.format("MM")) < parseInt(tmpS.format("MM"))) {
+                  tmpS.year(parseInt(tmpE.year()) - 1);
+                }
+                param_for_post.periodEnd = tmpE.format("YYYY-MM-DD");
+                param_for_post.periodStart = tmpS.format("YYYY-MM-DD");
+            }
+
+            if (param.currid)
+                param_for_post.currid = param.currid;
+
+            $('#js-top-films-index').html('');
+            $('.graph-statistic').trigger('enableLoader');
+
+            return [param_for_post];
+        }
+        xhr_static.error = function () {
+            $('.graph-statistic').trigger('displayError');
+        }
+        xhr_static.success = function (response, param_for_success, param_for_post) {
+
+            var data = JSON.parse(response);
+            data = data.slice(0, top_length);
+
+            if (data.length < 1) {
+                xhr_static.error();
+                return;
+            }
+
+            $('.graph-statistic').each(function (i) {
+
+                var graph = $(this).data('graph-statistic');
+                var type = $(this).attr('data-type');
+
+                var data_for_graph = {
+                    values: []
+                };
+                data.map(function (t) {
+                    data_for_graph.values.push(t[type])
+                });
+
+                graph.draw(data_for_graph, top_length);
+
+            });
+
+            var list_films_html = '';
+
+            data.map(function (e, i) {
+
+                e.money = $.lib.rank(e.sum);
+                e.tickets = $.lib.rank(e.quantity);
+                e.seances = $.lib.rank(e.sessions);
+                e.moneyPerSession = $.lib.rank(e.moneyPerSession);
+                e.ticketsPerSession = $.lib.rank(e.ticketsPerSession);
+
+                list_films_html += $.lib.create_tmpl('statistic-film-item', e);
+
+            });
+
+            $('#js-top-films-index').html(list_films_html);
+
+        }
+
+        var $dateRange = $('#js-statistic-range-index .js-range-select');
+
+        var $currency = $('#js-select-currency-index');
+
+        $dateRange.on("getDataIndexWidget", function () {
+
+            xhr_static.send(getParam());
+        });
+
+        $dateRange.on('change', function (e, rangeResult) {
+            console.log(e, rangeResult)
+            xhr_static.send(getParam());
+        });
+        $currency.on('changeCurrency', function (e, currid) {
+            console.log(e, currid)
+            xhr_static.send(getParam());
+        });
+
+        function getParam() {
+            var param = $dateRange.data('SelectRange').getRangeResult();
+            var currency = $currency.data('SelectCurrency');
+
+            if (currency)
+                param.currid = currency.getValue();
+
+            return param;
+        }
+
+    }
+
+
+    function getFilmRospis() {
+        var xhr_staticFilm = new Xhr();
+
+        xhr_staticFilm.url = '/ekb/film-rospis/';
+
+        xhr_staticFilm.beforeSend = function (param) {
+            if (isFollowed){
+
+            }
+
+            var param_for_post = {};
+            var value_key_range__week = [];
+
+            param_for_post.periodStart = param.start_date;
+            param_for_post.periodEnd = param.end_date;
+            param_for_post.idFilm = param.id;
+
+            if (!param_for_post.idFilm) {
+                const parts = window.location.pathname.split('/');
+                param_for_post.idFilm = parts[parts.length - 2];
+            }
+
+            if (param['rangeType'] == "week" || param['rangeType'] == "weekend")
+                param_for_post.groupBy = 1 * 24;
+
+            if (param['rangeType'] == "year")
+                param_for_post.groupBy = 1 * 24 * 30;
+
+            if (param.currid)
+                param_for_post.currid = param.currid;
+
+            if (param.sroomsNum)
+                param_for_post.sroomsNum = param.sroomsNum;
+
+            //for week
+            for (var i = 0; i < 7; i++)
+                value_key_range__week.push(
+                    $.lib.date.parseDateForEKB(
+                        $.lib.date.addDays(param.start_date, i)
+                    )
+                );
+            //end for week
+
+            $('.graph-beziers#rospis-graph-beziers').trigger('enableLoader');
+
+            return [param_for_post, {
+                'value_key_range__week': value_key_range__week,
+                'rangeType': param['rangeType']
+            }];
+        }
+        xhr_staticFilm.error = function () {
+            $('.graph-beziers#rospis-graph-beziers').trigger('displayError');
+        }
+        xhr_staticFilm.success = function (response, param_for_success, param_for_post) {
+
+            var data = JSON.parse(response),
+                total = data[0];
+            data.shift();
+
+            $('#rp-cinemas').text(total.cinemasNum);
+            $('#rp-seances').text(total.seansesNum);
+            $('#rp-seances-m-c').text(total.seansesPerCinema);
+
+            var seances_val = Math.round(total.seansesNum / total.sroomsNum * 10) / 10;
+            if (!seances_val) seances_val = 0;
+            $('#rp-seances-m-r').text(seances_val);
+
+            var value_key_range__week = param_for_success.value_key_range__week,
+                rangeType = param_for_success.rangeType;
+
+            if (data.length < 1) {
+                xhr_staticFilm.error();
+                return;
+            }
+
+            $('.graph-beziers#rospis-graph-beziers').each(function (i) {
+
+                var type = $(this).attr('data-type');
+
+                var data_for_graph = {
+                    values: [],
+                    titles: []
+                };
+
+                //week
+                if (rangeType == "weekend" || rangeType == "week")
+                    data.map(function (d) {
+                        value_key_range__week.map(function (t, i) {
+                            if (d['dateStart'].indexOf(t) > -1) {
+
+                                var s = $.lib.date.parseDateFromEKB(t),
+                                    title = $.lib.date.WEEK_SHORT_NAME[$.lib.lang.get_short_locale()][s.getDay()];
+
+                                data_for_graph.values.push(d[type]);
+                                data_for_graph.titles.push(title);
+
+                            }
+                        })
+                    });
+
+                //year
+                if (rangeType == "year")
+                    data.map(function (d) {
+                        var s = $.lib.date.parseDateFromEKB(d.dateStart),
+                            title = $.lib.date.MONTH_SHORT_NAME[$.lib.lang.get_short_locale()][s.getMonth()];
+
+                        data_for_graph.values.push(d[type]);
+                        data_for_graph.titles.push(title);
+                    });
+
+                $(this).trigger('draw', [data_for_graph]);
+
+            });
+
+        }
+
+        var $dateRange = $('#js-select-period-rospis .js-range-select');
+        var $currency = $('#js-select-currency-film');
+        var $srooms = $('#rb-cinema-select');
+
+        $dateRange.on("filmRospis", function () {
+            xhr_staticFilm.send(getParam());
+        });
+
+        $dateRange.on('change', function (e, rangeResult) {
+            xhr_staticFilm.send(getParam());
+        });
+        $currency.on('changeCurrency', function (e, currid) {
+            xhr_staticFilm.send(getParam());
+        });
+
+        $srooms.on('change', function () {
+            xhr_staticFilm.send(getParam());
+        });
+
+        function getParam() {
+            var param = $dateRange.data('SelectRange').getRangeResult();;
+            var currency = $currency.data('SelectCurrency');
+
+            if (currency)
+                param.currid = currency.getValue();
+
+            if ($srooms.attr('data-val') > 0)
+                param.sroomsNum = $srooms.attr('data-val');
+            else
+                param.sroomsNum = null;
+
+            return param;
+        }
+
+    }
+
+    function getGovermentSupportInfo() {
+        const puNumber = $(".gov-sup").data("punumber");
+
+        if(!puNumber) {
+            return null;
+        }
+
+        jQuery.ajax({
+            url: "https://mkesb.sapi.fond-kino.ru/sapi/rest/ktpub-api/rating/movies?puNumber=" + puNumber + "&stoken=anonymouse",
+            success: function (response) {
+                if (response.movies.length) {
+                    $(".card-film__gov-sup, .gov-sup").addClass("visible");
+
+                    var fields = response.movies[0];
+
+                    $(".rating-financing_source").html(
+                      fields.financing_source.map(function (fs) {
+                          var icon = "<img src='" + fs.image + "' style='position: absolute; margin-left: -26px; margin-top: 4px;'/>";
+                          var text = "<span>" + fs.name + "</span>";
+                          return $("<div>" + icon + text + "</div>");
+                      })
+                    );
+
+                    $(".rating-companies").html(
+                      fields.companies.map(function(c){
+                          var $company = $("<div>" + c.name + "</div>");
+                          $company.css({lineHeight: "16px", marginBottom: "5px"});
+
+                          return $company;
+                      })
+                    );
+
+                    var refundableLabel = "<span style='color: #b1b1b1;'>" + TRANSLATE_FILM_DETAILS.refundable + "</span>";
+                    var refundableValue = "<span>" + fields.refundable_support + "</span>";
+                    var nonRefundableLabel = "<span style='color: #b1b1b1;'>" + TRANSLATE_FILM_DETAILS.nonRefundable + "</span>";
+                    var nonRefundableValue = "<span>" + fields.nonrefundable_support + "</span>";
+                    $(".rating-support")
+                      .html($("<div style='margin-bottom: 5px;'>" + refundableLabel + "<br/>" + refundableValue + "</div>"))
+                      .append($("<div>" + nonRefundableLabel + "<br/>" + nonRefundableValue + "</div>"));
+
+                    $(".rating-budget").text(fields.budget);
+
+
+                    if(fields.unfulfilledObligationsDebt == 0 && fields.unfulfilledObligationsCost == 0 ) {
+                        $(".rating-unfulfilled-obligations-block").remove();
+                    } else {
+                        $(".rating-unfulfilledObligationsDebt").text(fields.unfulfilledObligationsDebt);
+                        $(".rating-unfulfilledObligationsCost").text(fields.unfulfilledObligationsCost);
+                        $(".rating-unfulfilledObligationsRelevance").text(response.unfulfilledObligationsRelevance);
+                    }
+
+                    if (fields.unfulfilledObligationsDesc) {
+                        $(".rating-unfulfilledObligationsDesc").text(fields.unfulfilledObligationsDesc);
+                    } else {
+                        $(".unfulfilled-obligations-desc-block").remove();
+                    }
+                }
+            }
+        });
+    }
+
+    function getStatisticsFilmWidgetDetail() {
+        var xhr_staticFilm = new Xhr();
+
+        xhr_staticFilm.url = '/ekb/film-statistic/';
+        xhr_staticFilm.beforeSend = function (param) {
+
+            $('#statistic-film-list').html('');
+
+            var param_for_post = {};
+            var value_key_range__week = [];
+
+
+            if (param.rangeType == "weekend" || param.rangeType == "week") {
+                param_for_post.periodStart = param.start_date;
+                param_for_post.periodEnd = param.end_date;
+            }
+            if (param.rangeType == "year") {
+                param_for_post.year = moment(param.start_date, "YYYY-MM-DD").year();
+                // param_for_post.periodStart = param.start_date;
+                // param_for_post.periodEnd = param.end_date;
+
+            }
+
+            param_for_post.id = param.id;
+
+            if (!param_for_post.id) {
+                const parts = window.location.pathname.split('/');
+                param_for_post.id = parts[parts.length - 2];
+            }
+
+            if (param['rangeType'] == "week" || param['rangeType'] == "weekend")
+                param_for_post.groupBy = 1;
+
+            if (param.currid)
+                param_for_post.currid = param.currid;
+
+            //for week
+            for (var i = 0; i < 7; i++)
+                value_key_range__week.push(
+                    $.lib.date.parseDateForEKB(
+                        $.lib.date.addDays(param.start_date, i)
+                    )
+                );
+            //end for week
+
+            $('.graph-beziers.film-detail-beziers').trigger('enableLoader');
+
+            return [param_for_post, {
+                'value_key_range__week': value_key_range__week,
+                'rangeType': param['rangeType']
+            }];
+        }
+        xhr_staticFilm.error = function () {
+            $('.graph-beziers.film-detail-beziers').trigger('displayError');
+        }
+        xhr_staticFilm.success = function (response, param_for_success, param_for_post) {
+
+            var data = JSON.parse(response),
+                total = data[0];
+            data.shift();
+
+            var value_key_range__week = param_for_success.value_key_range__week,
+                rangeType = param_for_success.rangeType,
+                html_for_list = '';
+
+            if (data.length < 1) {
+                xhr_staticFilm.error();
+                return;
+            }
+
+            $('.graph-beziers.film-detail-beziers').each(function (i) {
+
+                var type = $(this).attr('data-type');
+
+                var data_for_graph = {
+                    values: [],
+                    titles: []
+                };
+
+                //week
+                if (rangeType == "weekend" || rangeType == "week")
+                    data.map(function (d) {
+                        value_key_range__week.map(function (t, i) {
+                            if (d['dateStart'].indexOf(t) > -1) {
+
+                                var s = $.lib.date.parseDateFromEKB(t),
+                                    title = $.lib.date.WEEK_SHORT_NAME[$.lib.lang.get_short_locale()][s.getDay()];
+
+                                data_for_graph.values.push(d[type]);
+                                data_for_graph.titles.push(title);
+
+                            }
+                        })
+                    });
+
+                //year
+                if (rangeType == "year")
+                    data.map(function (d) {
+                        var s = $.lib.date.parseDateFromEKB(d.dateStart),
+                            title = $.lib.date.MONTH_SHORT_NAME[$.lib.lang.get_short_locale()][s.getMonth()];
+
+                        data_for_graph.values.push(d[type]);
+                        data_for_graph.titles.push(title);
+                    });
+
+                $(this).trigger('draw', [data_for_graph]);
+
+            });
+
+            //render list
+            var sum = {
+                'sum': 0,
+                'quantity': 0,
+                'sessions': 0,
+                'moneyPerSession': 0,
+                'ticketsPerSession': 0,
+            };
+
+            data.map(function (d) {
+
+                sum.sum += d.sum;
+                sum.quantity += d.quantity;
+                sum.sessions += d.sessions;
+                sum.moneyPerSession += d.moneyPerSession;
+                sum.ticketsPerSession += d.ticketsPerSession;
+
+                var s = $.lib.date.parseDateFromEKB(d['dateStart']);
+                //week
+                if (rangeType == "weekend" || rangeType == "week")
+                    d.title = $.lib.date.WEEK_SHORT_NAME[$.lib.lang.get_short_locale()][s.getDay()] + ' ' + $.lib.z(s.getDate()) + '.' + $.lib.z(s.getMonth() + 1);
+                //year
+                if (rangeType == "year")
+                    d.title = $.lib.date.MONTH_SHORT_NAME[$.lib.lang.get_short_locale()][s.getMonth()];
+
+                d.sum = $.lib.rank(Math.round(d.sum));
+                d.quantity = $.lib.rank(Math.round(d.quantity));
+                d.sessions = $.lib.rank(Math.round(d.sessions));
+                d.moneyPerSession = $.lib.rank(Math.round(d.moneyPerSession));
+                d.ticketsPerSession = $.lib.rank(Math.round(d.ticketsPerSession));
+
+                html_for_list += $.lib.create_tmpl('statistic-film-item', d);
+
+            });
+            $('#statistic-film-list').html(html_for_list);
+
+            //total
+            sum.sum = $.lib.rank(Math.round(sum.sum));
+            sum.quantity = $.lib.rank(Math.round(sum.quantity));
+            sum.sessions = $.lib.rank(Math.round(sum.sessions));
+            sum.moneyPerSession = $.lib.rank(Math.round(total.moneyPerSession));
+            sum.ticketsPerSession = $.lib.rank(Math.round(total.ticketsPerSession));
+
+            var html_for_list__total = $.lib.create_tmpl('statistic-film-total', sum)
+
+            $('#statistic-film-list').append(html_for_list__total);
+            //end total
+
+        }
+
+
+        var $dateRange = $('#js-statistic-range-film .js-range-select');
+        var $currency = $('#js-select-currency-film');
+
+        $dateRange.on("filmStatistic", function () {
+            xhr_staticFilm.send(getParam());
+        });
+
+        $dateRange.on('change', function (e, rangeResult) {
+            xhr_staticFilm.send(getParam());
+        });
+        $currency.on('changeCurrency', function (e, currid) {
+            xhr_staticFilm.send(getParam());
+        });
+
+        function getParam() {
+            var param = $dateRange.data('SelectRange').getRangeResult();
+            var currency = $currency.data('SelectCurrency');
+
+            if (currency)
+                param.currid = currency.getValue();
+
+            return param;
+        }
+
+    }
+
+
+    function getTopFilmsWidgetStat($parent, region_id) {
+        var xhr_static = new Xhr();
+        $parent.trigger('init');
+
+        xhr_static.url = '/ekb/top-films/';
+        xhr_static.beforeSend = function (param) {
+
+            var param_for_post = {},
+                param_for_success = {};
+
+            param_for_post.periodStart = $.lib.date.parseDateForEKB(Date.parse(param.start_date));
+            param_for_post.periodEnd = $.lib.date.parseDateForEKB(Date.parse(param.end_date));
+
+            if (region_id) param_for_post.region = region_id;
+
+            param_for_success.periodType = param.rangeType;
+            if (region_id) param_for_success.region = region_id;
+
+            if (param.currid)
+                param_for_post.currid = param.currid;
+
+            $parent.trigger('enableLoader');
+
+            return [param_for_post, param_for_success];
+        }
+        xhr_static.error = function () {
+            $parent.trigger('displayError');
+        }
+        xhr_static.success = function (response, param_for_success, param_for_post) {
+
+            var data = JSON.parse(response);
+            data = data.slice(0, 20);
+
+            if (data.length < 1) {
+                xhr_static.error();
+                return;
+            }
+
+            var list_films_html = '';
+            var total_by_period = {
+                'money': 0,
+                'tickets': 0,
+                'seances': 0,
+                'moneyPerSession': 0,
+                'ticketsPerSession': 0,
+            };
+            var values_as_array = {
+                'money': [],
+                'tickets': [],
+                'seances': [],
+                'moneyPerSession': [],
+                'ticketsPerSession': [],
+            };
+
+            data.map(function (e) {
+
+                total_by_period.money += e.sum;
+                total_by_period.tickets += e.quantity;
+                total_by_period.seances += e.sessions;
+                total_by_period.moneyPerSession += e.moneyPerSession;
+                total_by_period.ticketsPerSession += e.ticketsPerSession;
+
+                values_as_array.money.push(e.sum);
+                values_as_array.tickets.push(e.quantity);
+                values_as_array.seances.push(e.sessions);
+                values_as_array.moneyPerSession.push(e.moneyPerSession);
+                values_as_array.ticketsPerSession.push(e.ticketsPerSession);
+
+            });
+
+            data.map(function (e, i) {
+
+                var _e = {};
+
+                _e.id = e.id;
+                _e.title = e.title;
+                _e.money = $.lib.rank(Math.round(e.sum));
+                _e.tickets = $.lib.rank(Math.round(e.quantity));
+                _e.seances = $.lib.rank(Math.round(e.sessions));
+                _e.moneyPerSession = $.lib.rank(Math.round(e.moneyPerSession));
+                _e.ticketsPerSession = $.lib.rank(Math.round(e.ticketsPerSession));
+
+                _e.percent_money = (e.sum / total_by_period.money * 100).toFixed(2);
+                _e.percent_tickets = (e.quantity / total_by_period.tickets * 100).toFixed(2);
+                _e.percent_seances = (e.sessions / total_by_period.seances * 100).toFixed(2);
+                _e.percent_moneyPerSession = (e.moneyPerSession / total_by_period.moneyPerSession * 100).toFixed(2);
+                _e.percent_ticketsPerSession = (e.ticketsPerSession / total_by_period.ticketsPerSession * 100).toFixed(2);
+
+                list_films_html += $.lib.create_tmpl('statistic-big-row', _e);
+
+            });
+
+            $parent.find('.js-top-statistic-big__content').html(list_films_html);
+            $parent.trigger('draw');
+
+            //share
+            var s_param_for_post = param_for_post;
+
+            s_param_for_post.regionId = param_for_post.region;
+            delete s_param_for_post.region;
+
+            var lang = $('html').attr('lang') == 'en-US' ? '-en' : '';
+            $parent.data('share-ya',
+                Ya.share2($parent.find('.stat-share')[0], {
+                    content: {
+                        url: document.location.origin + '/statistics/' + (s_param_for_post ? '?' + $.param(s_param_for_post) : ''),
+                    },
+                    contentByService: {
+                        vkontakte: {
+                            url: document.location.origin + '/statistics/' + (s_param_for_post ? '?' + $.param(s_param_for_post) : ''),
+                            image: document.location.origin + '/img/logo' + lang + '.png'
+                        }
+                    }
+                })
+            );
+
+            $parent.find('[name="periodStart"]').val(param_for_post.periodStart);
+            $parent.find('[name="periodEnd"]').val(param_for_post.periodEnd);
+            $parent.find('[name="region"]').val(param_for_post.regionId);
+            $parent.find('[name="currid"]').val(param_for_post.currid);
+
+            if (param_for_post.regionId)
+                $parent.find('[name="region_title"]').val($("[data-region-id='" + param_for_post.regionId + "'] > span").text());
+
+        }
+
+
+        var $dateRange = $parent.find('.js-range-select');
+        var $currency = $parent.find('.select-currency');
+
+        $parent.on("getData", function (e) {
+            xhr_static.send(getParam());
+        });
+
+        $parent.on('change init', '.js-range-select', function (e, rangeResult) {
+
+            // if ($parent.data('share-ya'))
+            //     $parent.data('share-ya').destroy();
+
+            xhr_static.send(getParam());
+
+        });
+
+        $parent.on('changeCurrency', '.select-currency', function (e) {
+
+            // if ($parent.data('share-ya'))
+            //     $parent.data('share-ya').destroy();
+
+            xhr_static.send(getParam());
+
+        });
+
+        function getParam() {
+            var param = $dateRange.data('SelectRange').getRangeResult();
+            var currency = $currency.data('SelectCurrency');
+
+            // if (isStatistics) {
+            //     param = $dateRange.data("rangeResult");
+            //     if (param.rangeTitle != $(".rs-val").text() && $(".rs-val").text().indexOf(" - ") > -1) {
+            //         const tmpData = $(".rs-val").text().split(" - ");
+            //         const tmpE = moment(tmpData[1], "DD.MM.YYYY");
+            //         const tmpS = moment(tmpData[0] + "." + tmpE.year(), "DD.MM.YYYY");
+            //         param.end_date = tmpE.format("YYYY-MM-DD");
+            //         param.start_date = tmpS.format("YYYY-MM-DD");
+            //     }
+            // }
+            if (currency)
+                param.currid = currency.getValue();
+
+            return param;
+        }
+
+
+    }
+
+    getGovermentSupportInfo();
+
+    //getPriceWidgetIndex
+    wrapperWidgetColumns('#js-dynamic-price-range .js-range-select', '#js-dynamic-price-widget', 'middlePrice', '#js-dynamic-price-select-currency');
+
+    //getDynamicWidgetIndex
+    wrapperWidgetColumns('#js-dynamic-viewers-range .js-range-select', '#js-dynamic-viewers-widget', 'quantity');
+
+    getTopFilmsWidgetIndex();
+
+    getStatisticsFilmWidgetDetail();
+
+    getFilmRospis();
+
+    //statistic-big top
+    $('body').on('top-statistics-show', '.graph-statistic-big-top-box', function (e, rangeType, current) {
+
+        $('.graph-statistic-big-top-box .js-top-statistic-big').remove();
+
+        if ($.lib.getGet() && $.lib.getGet().periodType && $.lib.getGet().periodStart) {
+            current = new $.lib.SelectRange().calcCurrentRangeByDate(
+                $.lib.getGet().periodType,
+                $.lib.getGet().periodStart
+            );
+            rangeType = $.lib.getGet().periodType;
+        }
+
+        $('.graph-statistic-big-top-box').prepend($('#statistic-big').html());
+        $('.graph-statistic-big-top-box .js-top-statistic-big').each(function (i) {
+            var t = $(this);
+            getTopFilmsWidgetStat(t);
+            t.find('.js-select-period').trigger('init.js-select-period', [rangeType, current]);
+            t.find('.select-currency').trigger('init.select-currency');
+        });
+
+    });
+
+    $(function () {
+        $('.graph-statistic-big-top-box').trigger('top-statistics-show');
+    });
+
+    //statistic-big regions
+    $('body').on('change', '#select-regions-for-stat-big', function (e, rangeType, current) {
+        var tt = $(this),
+            regions_id = [],
+            regions_hidden_val = '',
+            $jsTopStatisticBig = $('.graph-statistic-big-regions-box .js-top-statistic-big'),
+            $statisticsWidgetsBox = $('.statistics-widgets-box');
+
+        var flag_for_all = false,
+            flag_for_round = false;
+
+        if ($statisticsWidgetsBox.find('.sp-control-for-all__for-all').eq(0).length) {
+            flag_for_all = $statisticsWidgetsBox.find('.sp-control-for-all__for-all').eq(0)[0].checked;
+            flag_for_round = $statisticsWidgetsBox.find('.sp-control-for-all__for-round').eq(0)[0].checked;
+        }
+
+
+        rangeType = rangeType || $('.graph-statistic-big-top-box').find('.sp-select-type').val();
+        current = current || $('.graph-statistic-big-top-box').find('.sp-range-select').attr('data-current-val');
+
+        if (tt.find('.select-regions-value').val())
+            regions_hidden_val = tt.find('.select-regions-value').val().replace(/^\,|\,$/g, '');
+
+        if (regions_hidden_val.length > 0) regions_id = regions_hidden_val.split(',');
+
+        $jsTopStatisticBig.remove();
+
+        regions_id.map(function (id) {
+
+            var $widget = $($('#statistic-big').html());
+            $widget.find('.graph-statistic-big-head .grs__item._title').text($('.select-regions-popup [data-region-id="' + id + '"]').text())
+
+            $('.graph-statistic-big-regions-box').prepend($widget);
+
+            getTopFilmsWidgetStat($widget, id);
+
+        });
+        $jsTopStatisticBig = $('.graph-statistic-big-regions-box .js-top-statistic-big');
+
+        if ($.lib.getGet() && $.lib.getGet().periodType && $.lib.getGet().periodStart) {
+            current = new $.lib.SelectRange().calcCurrentRangeByDate(
+                $.lib.getGet().periodType,
+                $.lib.getGet().periodStart
+            );
+            rangeType = $.lib.getGet().periodType;
+
+            flag_for_all = true;
+            flag_for_round = true;
+
+        }
+
+        $statisticsWidgetsBox.find('.sp-control-for-all__for-all').each(function () {
+            $(this)[0].checked = flag_for_all;
+        });
+        $statisticsWidgetsBox.find('.sp-control-for-all__for-round').each(function () {
+            $(this)[0].checked = flag_for_round;
+        });
+
+        // $jsTopStatisticBig.find('.js-select-period').trigger('init.js-select-period', [rangeType, current]);
+        $jsTopStatisticBig.find('.select-currency').trigger('init.select-currency');
+
+        //round graph
+        if (regions_hidden_val && $('#filter-widget:visible').size()) {
+
+            var rgsParam = {
+                'region': regions_hidden_val
+            };
+
+            var rangeResult = $('.graph-statistic-big-top-box').find('.js-range-select').data('SelectRange').getRangeResult();
+            var periodValTitle = rangeResult['rangeTitle'];
+
+            if (rangeResult['rangeType'] == "year")
+                periodValTitle = periodValTitle + ' ' + $('#graph-round-small-box__title-period-value').attr('data-year-title');
+
+            rgsParam.periodStart = rangeResult['start_date'];
+            rgsParam.periodEnd = rangeResult['end_date'];
+
+            roundGraphStatisticByRegions(rgsParam);
+            $('#graph-round-small-box__title-period').removeClass('-none');
+            $('#graph-round-small-box__title-period-value').html(periodValTitle);
+        } else {
+            roundGraphStatisticByRegions(false);
+            $('#graph-round-small-box__title-period').addClass('-none');
+            $('#graph-round-small-box__title-period-value').html('');
+        }
+
+    })
+
+    //end post for range select
+
+    function roundGraphStatisticByRegions(param_for_post) {
+
+        if (param_for_post === false) {
+            display_error();
+            return;
+        }
+
+        var xhr_static_first = new Xhr();
+
+        xhr_static_first.url = '/ekb/general-stats/';
+        xhr_static_first.beforeSend = function (param) {
+
+            if ($.lib.getGet() && $.lib.getGet().end_date && $.lib.getGet().start_date) {
+                param.periodStart = $.lib.getGet().start_date;
+                param.periodEnd = $.lib.getGet().end_date;
+            }
+            // param.region = null;
+
+            xhr_static_first.error();
+            $('.js-grd-money').addClass('-loaded');
+            $('.js-grd-tickets').addClass('-loaded');
+            $('.js-grd-seances').addClass('-loaded');
+            return [param];
+        }
+        xhr_static_first.error = function () {
+            display_error()
+        }
+        xhr_static_first.success = function (response, param_for_success, param_for_post) {
+
+            var data = JSON.parse(response);
+            data = data.slice(0, 1)[0];
+
+            if (data.length < 1) {
+                xhr_static_first.error();
+                return;
+            }
+
+            var total_by_period = data;
+
+            var xhr_static_second = new Xhr();
+
+            xhr_static_second.url = '/ekb/general-stats/';
+            xhr_static_second.beforeSend = function (param) {
+
+                param.region = null;
+
+                xhr_static_second.error();
+
+                return [param];
+            }
+            xhr_static_second.error = function () {
+                xhr_static_first.error();
+            }
+            xhr_static_second.success = function (response, param_for_success, param_for_post) {
+
+                var data = JSON.parse(response);
+                data = data.slice(0, 1)[0];
+
+                if (data.length < 1) {
+                    xhr_static_second.error();
+                    return;
+                }
+
+                var total = data;
+
+                $('.js-grd-money').trigger('draw', [total_by_period.sum / total.sum * 100]);
+                $('.js-grd-tickets').trigger('draw', [total_by_period.quantity / total.quantity * 100]);
+                $('.js-grd-seances').trigger('draw', [total_by_period.sessions / total.sessions * 100]);
+
+            }
+
+            xhr_static_second.send(param_for_post);
+
+        }
+
+        xhr_static_first.send(param_for_post);
+
+        function display_error() {
+            $('.js-grd-money').trigger('error');
+            $('.js-grd-tickets').trigger('error');
+            $('.js-grd-seances').trigger('error');
+        }
+
+    }
+
+    //end on select period init for widget
+
+}(jQuery));
+
+!function ($) {
+
+    $(function () {
+        $('.main-banner-carousel').slick({
+            'prevArrow': '<button type="button" class="slick-prev"></button>',
+            'nextArrow': '<button type="button" class="slick-next"></button>'
+        })
+    })
+
+}(jQuery);
+
+//global currency
+!function ($) {
+
+    $(function () {
+
+        $('#global-select-currency').bind('changeCurrency', function (e, curId) {
+            if (curId) window.location.href = '/site/set-currency/?currency=' + curId;
+        });
+
+    });
+
+}(jQuery);
+
+//film-analogs-select-period
+!function ($) {
+
+    $(function () {
+        $('#film-analogs-select-period').bind('change', function () {
+            document.location = $(this).find('option[value="' + $(this).val() + '"]').attr('data-url');
+        });
+    });
+
+}(jQuery);

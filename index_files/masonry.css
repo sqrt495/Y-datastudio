@@ -1,0 +1,18 @@
+.masonry {
+	margin-right: -30px;
+	z-index: 0;
+}
+.tile-item, .grid-sizer {
+	width: 31% !important;
+	height: 270px;
+	margin: 15px 2.3% 15px 0 !important;
+}
+._photo-wide.tile-item {
+	width: 64.37% !important;
+}
+
+.grid-sizer {
+	position: absolute;
+	top: 0;
+	left: 0;
+}

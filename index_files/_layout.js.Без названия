@@ -1,0 +1,114 @@
+;(function($){
+    "use strict";
+
+    $.layout_settings = {
+
+        'menu': {
+            '.menu-tabs': {
+                'active_item_class': '-act'
+            },
+            '.am-list': {
+                'active_item_class': '-act',
+                'parent': '<'
+            },
+            '.head-menu li': {
+                'active_item_class': '-act',
+                'parent': '<'
+
+            }
+        }
+    }
+
+
+})(jQuery);
+;;(function($){
+    "use strict";
+
+    var layout = {};
+
+    layout.menu_active_item = function( settings ) {
+
+        var pathname = document.location.pathname.replace(/\/$/,'') + '/';
+
+        if (pathname == '/films/analogs/') {
+            $('.am-list > li > a[href="' + pathname + '"]').parent().addClass('-act');
+            return;
+        }
+
+
+        for ( var p in settings ) {
+            $(p + ' a').each(function () {
+
+                var href = $(this).attr('href').replace(/\/$/, '') + '/';
+
+                if (
+                    href != '/' && (
+                        (pathname.indexOf( href ) > -1 && $(this).attr('data-global') ) ||
+                        pathname.match( new RegExp(href + '$') )
+                    ) ||
+                    (pathname.indexOf( 'about' ) > -1 && href == '/about/history/') && $(this).attr('data-global')
+                ) {
+
+                    var item = $(this);
+
+                    if ( settings[p]['parent'] ) {
+
+                        var relations = settings[p]['parent'].replace(/[^\<]/g, '');
+
+                        for (var i = 0; i < relations.length; i++)
+                            item = item.parent();
+
+                    }
+
+                    item.addClass(settings[p]['active_item_class']);
+                }
+
+            });
+        }
+    }
+
+    layout.tmpl = function( name_tmpl, es, $context_tmpl ) {
+
+        var $context = $('body'),
+            tmpl;
+
+        var
+            tmpl_regexp = new RegExp('\\<\\!\\-\\-\\s*tmpl\\s*\\#' + name_tmpl + '[\\n\\r\\f]*([\\s\\S]*?)[\\n\\r\\f]*\\-\\-\\>');
+
+        if ( $context_tmpl )
+            $context = $context_tmpl;
+
+        if ( $context.find( '#' + name_tmpl ).length ) {
+
+            tmpl = $context.find( '#' + name_tmpl).html();
+
+        } else {
+
+            tmpl = ( $context.html().replace(/[\n\r\f]/g,'') ).match( tmpl_regexp );
+            if ( tmpl && length in tmpl )
+                tmpl = tmpl[1];
+
+        }
+
+        if ( tmpl && es ) {
+            for (var p in es) {
+                if ( typeof p === 'string' && ( typeof es[p] === 'string' || typeof es[p] === 'number' ) ) {
+                    tmpl = tmpl.replace(new RegExp('\\{' + p + '\\}', 'g'), es[p] );
+                }
+            }
+        }
+        if ( !tmpl )
+            $.lib.warn( 'create_tmpl ' + name_tmpl + ': ' + 'tmpl: ' + tmpl );
+
+        return tmpl;
+    }
+
+    $.layout = layout;
+
+})(jQuery);
+;;(function($){
+    "use strict";
+
+    $.layout.menu_active_item( $.layout_settings.menu );
+
+})(jQuery);

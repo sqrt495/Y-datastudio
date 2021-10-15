@@ -1,0 +1,649 @@
+.wb-head {
+  border-bottom: none;
+  margin-top: 40px;
+  padding: 25px 26px; }
+
+.rb-filters__display-item {
+  flex: none;
+  padding: 12px 20px; }
+
+.head__lang {
+  display: none; }
+
+.r-table {
+  overflow-x: hidden;
+  position: relative; }
+  .r-table .small {
+    font-size: .8em; }
+  .r-table .expandable-item {
+    margin-bottom: 12px;
+    display: none; }
+    .r-table .expandable-item.visible {
+      display: block; }
+  .r-table__fixed {
+    position: absolute;
+    top: 0;
+    z-index: 10;
+    overflow: hidden; }
+  .r-table__head {
+    background-color: #e7e9ee; }
+  .r-table__sub-th {
+    display: flex; }
+  .r-table__project-name {
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.33;
+    color: #704394; }
+    .r-table__project-name a {
+      color: inherit; }
+  .r-table__row-total {
+    position: relative;
+    background: white;
+    z-index: 99;
+    will-change: top; }
+    .r-table__row-total .r-table__col {
+      min-height: 50px;
+      display: flex;
+      color: rgba(48, 29, 59, 0.5);
+      align-items: center; }
+      .r-table__row-total .r-table__col .r-table__text {
+        color: inherit; }
+  .r-table__show-more-paginate {
+    border-radius: 3px;
+    border: solid 1px #ffffff;
+    background-color: #6e4394;
+    font-size: 16px;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: normal;
+    letter-spacing: normal;
+    margin: 0 auto;
+    display: block;
+    text-align: center;
+    color: #ffffff;
+    vertical-align: center;
+    padding: 10px 60px;
+    cursor: pointer;
+    margin-top: 30px; }
+    .r-table__show-more-paginate:hover {
+      opacity: 0.8; }
+  .r-table .show-more {
+    font-family: Roboto;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.33;
+    color: #704394;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
+    display: inline-block; }
+  .r-table__company {
+    margin-bottom: 10px; }
+  .r-table .fixed-column {
+    display: none;
+    white-space: nowrap;
+    position: absolute;
+    margin-top: -28px;
+    font-size: 12px;
+    background-color: #e5e7ec;
+    padding: 5px;
+    color: #9791a0;
+    border-radius: 40px;
+    margin-left: -100px;
+    z-index: 10; }
+  .r-table.show-fixed .fixed-column {
+    display: block; }
+  .r-table__title {
+    white-space: nowrap;
+    cursor: inherit; }
+  .r-table .scroll-runner {
+    height: 8px;
+    bottom: 8px;
+    width: 100%;
+    position: fixed;
+    background-color: #6e4394 !important; }
+    .r-table .scroll-runner::after, .r-table .scroll-runner::before {
+      position: absolute;
+      display: block;
+      content: "";
+      width: 100%;
+      height: 8px; }
+    .r-table .scroll-runner::after {
+      bottom: -8px; }
+    .r-table .scroll-runner::before {
+      top: -12px;
+      height: 12px; }
+  .r-table__body {
+    overflow-y: hidden;
+    overflow-x: hidden; }
+  .r-table__row {
+    padding: 0; }
+  .r-table__col {
+    padding: 10px 0;
+    min-width: 100px; }
+    .r-table__col.text-align-right {
+      text-align: right; }
+      .r-table__col.text-align-right > * {
+        display: inline-block; }
+    .r-table__col:hover .r-table__title {
+      color: #938cb3;
+      transition: .2s ease-in color; }
+    .r-table__col.sort-disabled {
+      cursor: default !important; }
+      .r-table__col.sort-disabled:hover .r-table__title {
+        color: rgba(48, 29, 59, 0.5); }
+    .r-table__col:first-child {
+      min-width: 80px; }
+    .r-table__col.has-children {
+      text-align: center;
+      min-width: 380px; }
+  .r-table__date {
+    display: inline;
+    margin-right: 5px; }
+  .r-table__right-border, .r-table__left-border {
+    position: relative; }
+  .r-table__left-border::before, .r-table__right-border::after {
+    width: 1px;
+    content: "";
+    display: block;
+    height: 200vh;
+    bottom: -100px;
+    position: absolute;
+    background-color: #c3bec7; }
+  .r-table__left-border::before {
+    left: -10px; }
+  .r-table__right-border::after {
+    right: 0; }
+
+.refundable_support,
+.nonrefundable_support,
+.budget,
+.box_office,
+.percent_support,
+.total_movies,
+.audience,
+.unfulfilledObligationsDebt,
+.unfulfilledObligationsCost {
+  text-align: right;
+  justify-content: flex-end; }
+
+.release_date {
+  text-align: center; }
+
+.r-table__col + .r-table__col,
+.r-table__col + .md-table__col,
+.md-table__col + .r-table__col,
+.md-table__col + .md-table__col {
+  padding-right: 15px; }
+
+.overlay-left,
+.overlay-right {
+  position: fixed;
+  background-color: white;
+  height: 100%;
+  border-color: #e7e9ee;
+  border-style: solid;
+  border-width: 0; }
+  .overlay-left.overlay-left,
+  .overlay-right.overlay-left {
+    left: 0;
+    border-right-width: 30px; }
+  .overlay-left.overlay-right,
+  .overlay-right.overlay-right {
+    right: 0;
+    border-left-width: 30px; }
+
+.movie-rating {
+  min-height: 400px; }
+  .movie-rating .filter-box__search-select {
+    width: 250px; }
+    .movie-rating .filter-box__search-select .filter-box-select__dropdown-indicator {
+      display: none !important; }
+  .movie-rating .filter-box__filter-select {
+    width: 250px; }
+  .movie-rating__total-info .r-table__col {
+    min-height: 50px;
+    display: flex;
+    color: rgba(48, 29, 59, 0.5);
+    align-items: center; }
+    .movie-rating__total-info .r-table__col .r-table__text {
+      color: inherit; }
+  .movie-rating__not-found {
+    margin: 80px 30px;
+    font-size: 16px;
+    color: #2f1d3d; }
+  .movie-rating__project-name {
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.33;
+    color: #704394; }
+    .movie-rating__project-name a {
+      color: inherit; }
+  .movie-rating__financing-source {
+    margin-left: 5px;
+    display: inline-flex;
+    align-items: center; }
+    .movie-rating__financing-source img {
+      max-width: 26px;
+      max-height: 20px;
+      top: 1px;
+      position: relative; }
+      .movie-rating__financing-source img:nth-child(2) {
+        margin-left: 5px; }
+  .movie-rating__company {
+    margin-bottom: 10px; }
+  .movie-rating__sub-th {
+    display: flex; }
+    .movie-rating__sub-th .r-table__col:first-child {
+      padding-left: 0; }
+  .movie-rating__right-border, .movie-rating__left-border {
+    position: relative; }
+  .movie-rating__left-border::before, .movie-rating__right-border::after {
+    width: 1px;
+    content: '';
+    display: block;
+    top: -100px;
+    bottom: -100px;
+    position: absolute;
+    background-color: #c3bec7; }
+  .movie-rating__left-border::before {
+    left: -10px; }
+  .movie-rating__right-border::after {
+    right: 0; }
+
+.company-rating {
+  min-height: 400px; }
+  .company-rating__filter-container .filter-box__filter-select:first-of-type {
+    width: 302px !important; }
+  .company-rating .filter-box__search-select {
+    width: 240px; }
+    .company-rating .filter-box__search-select .filter-box-select__dropdown-indicator {
+      display: none !important; }
+  .company-rating__total-info .r-table__col {
+    min-height: 50px;
+    display: flex;
+    color: rgba(48, 29, 59, 0.5);
+    align-items: center; }
+    .company-rating__total-info .r-table__col .r-table__text {
+      color: inherit; }
+  .company-rating__not-found {
+    margin: 80px 30px;
+    font-size: 16px;
+    color: #2f1d3d; }
+  .company-rating__project-name {
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.33;
+    color: #704394; }
+    .company-rating__project-name a {
+      color: inherit; }
+  .company-rating__financing-source {
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center; }
+    .company-rating__financing-source img {
+      margin: 0 5px;
+      max-width: 26px;
+      max-height: 20px;
+      display: inline-block; }
+      .company-rating__financing-source img:first-child {
+        margin-left: 0px; }
+      .company-rating__financing-source img:nth-child(2) {
+        margin-left: 0; }
+    .company-rating__financing-source + * {
+      display: inline; }
+  .company-rating__company {
+    margin-bottom: 10px; }
+  .company-rating__sub-th {
+    display: flex; }
+    .company-rating__sub-th .r-table__col:first-child {
+      padding-left: 0; }
+  .company-rating__right-border, .company-rating__left-border {
+    position: relative; }
+  .company-rating__left-border::before, .company-rating__right-border::after {
+    width: 1px;
+    content: '';
+    display: block;
+    height: 100vh;
+    bottom: -100px;
+    position: absolute;
+    background-color: #c3bec7; }
+  .company-rating__left-border::before {
+    left: -10px; }
+  .company-rating__right-border::after {
+    right: 0; }
+
+#root {
+  min-height: 320px; }
+
+.preloader {
+  position: absolute;
+  z-index: 15;
+  top: 360px;
+  left: 50%;
+  margin: -25px 0 0 -25px;
+  width: 50px;
+  height: 50px;
+  background: url(/img/loader-mid.gif) no-repeat center #a782bd;
+  border-radius: 50%; }
+
+.r-table-mobile {
+  overflow: hidden; }
+  .r-table-mobile .small {
+    font-size: .8em; }
+  .r-table-mobile .expandable-item {
+    margin-bottom: 12px;
+    display: none; }
+    .r-table-mobile .expandable-item.visible {
+      display: block; }
+  .r-table-mobile__fixed {
+    position: absolute;
+    top: 0;
+    z-index: 10;
+    overflow: hidden; }
+  .r-table-mobile__head {
+    background-color: #e7e9ee; }
+  .r-table-mobile__sub-th {
+    display: flex; }
+  .r-table-mobile__project-name {
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.33;
+    color: #704394; }
+    .r-table-mobile__project-name a {
+      color: inherit; }
+  .r-table-mobile__row-total {
+    position: relative;
+    background: white;
+    z-index: 99;
+    will-change: top; }
+    .r-table-mobile__row-total .r-table__col {
+      min-height: 50px;
+      display: flex;
+      color: rgba(48, 29, 59, 0.5);
+      align-items: center; }
+      .r-table-mobile__row-total .r-table__col .r-table__text {
+        color: inherit; }
+  .r-table-mobile__show-more-paginate {
+    border-radius: 3px;
+    border: solid 1px #ffffff;
+    background-color: #6e4394;
+    font-size: 16px;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: normal;
+    letter-spacing: normal;
+    margin: 0 auto;
+    display: block;
+    text-align: center;
+    color: #ffffff;
+    vertical-align: center;
+    padding: 10px 60px;
+    cursor: pointer;
+    margin-top: 90px; }
+    .r-table-mobile__show-more-paginate:hover {
+      opacity: 0.8; }
+  .r-table-mobile .show-more {
+    font-family: Roboto;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.33;
+    color: #704394;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
+    display: inline-block; }
+  .r-table-mobile__company {
+    margin-bottom: 10px; }
+  .r-table-mobile .fixed-column {
+    display: none;
+    white-space: nowrap;
+    position: absolute;
+    margin-top: -28px;
+    font-size: 12px;
+    background-color: #e5e7ec;
+    padding: 5px;
+    color: #9791a0;
+    border-radius: 40px;
+    margin-left: 0;
+    z-index: 10; }
+  .r-table-mobile__title {
+    white-space: nowrap;
+    cursor: inherit; }
+  .r-table-mobile .scroll-runner-wrap {
+    display: block !important;
+    margin-bottom: 5px; }
+    .r-table-mobile .scroll-runner-wrap.wrap {
+      padding: 0 !important; }
+  .r-table-mobile .scroll-runner {
+    height: 8px !important;
+    border-radius: 0 !important;
+    background-color: #6e4394 !important; }
+  .r-table-mobile__body {
+    overflow-y: hidden;
+    overflow-x: hidden; }
+  .r-table-mobile__row {
+    padding: 0; }
+  .r-table-mobile__col {
+    padding: 10px 0;
+    min-width: 100px; }
+    .r-table-mobile__col.text-align-right {
+      text-align: right; }
+      .r-table-mobile__col.text-align-right > * {
+        display: inline-block; }
+    .r-table-mobile__col:hover .r-table__title {
+      color: #938cb3;
+      transition: .2s ease-in color; }
+    .r-table-mobile__col.sort-disabled {
+      cursor: default !important; }
+      .r-table-mobile__col.sort-disabled:hover .r-table__title {
+        color: rgba(48, 29, 59, 0.5); }
+    .r-table-mobile__col:first-child {
+      min-width: 80px; }
+    .r-table-mobile__col.has-children {
+      text-align: center;
+      min-width: 380px; }
+  .r-table-mobile__date {
+    display: inline;
+    margin-right: 5px; }
+  .r-table-mobile__right-border, .r-table-mobile__left-border {
+    position: relative; }
+  .r-table-mobile__left-border::before, .r-table-mobile__right-border::after {
+    width: 1px;
+    content: "";
+    display: block;
+    height: 200vh;
+    bottom: -100px;
+    position: absolute;
+    background-color: #c3bec7; }
+  .r-table-mobile__left-border::before {
+    left: -10px; }
+  .r-table-mobile__right-border::after {
+    right: 0; }
+
+.refundable_support,
+.nonrefundable_support,
+.budget,
+.box_office,
+.percent_support,
+.total_movies,
+.audience,
+.unfulfilledObligationsDebt,
+.unfulfilledObligationsCost {
+  text-align: right;
+  justify-content: flex-end; }
+
+.release_date {
+  text-align: center; }
+
+.r-table__col + .r-table__col,
+.r-table__col + .md-table__col,
+.md-table__col + .r-table__col,
+.md-table__col + .md-table__col {
+  padding-right: 15px; }
+
+.safari-table .scroll-runner {
+  display: none !important; }
+
+#root {
+  position: relative; }
+
+.js-custom-select-value {
+  width: 280px; }
+
+#main-wrap {
+  min-height: 100vh; }
+
+#main-wrap-inner {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around; }
+
+.wrap {
+  width: 100%; }
+
+.r-table__head .r-table__col {
+  cursor: pointer; }
+
+.r-table__head .r-table__col:first-child,
+.r-table__head .md-table__col:first-child {
+  padding-left: 15px; }
+
+.Select-input > input {
+  color: transparent; }
+
+.ui-autocomplete {
+  display: none !important;
+  position: absolute;
+  z-index: -1; }
+
+@media (max-width: 1024px) {
+  .wrap {
+    max-width: 100vw;
+    width: auto; } }
+
+.filter-box {
+  padding: 40px 0 0px; }
+  .filter-box__row {
+    display: flex;
+    justify-content: flex-end; }
+    .filter-box__row > * {
+      margin-left: 10px; }
+  .filter-box .d-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: transparent;
+    overflow: visible;
+    padding: 15px 0; }
+    .filter-box .d-head-title {
+      float: none;
+      width: auto; }
+    .filter-box .d-head-filter {
+      float: none;
+      width: auto; }
+  .filter-box__filter-select {
+    min-width: 182px; }
+  .filter-box__search-select {
+    position: relative;
+    min-width: 235px;
+    text-align: left; }
+    .filter-box__search-select * {
+      text-align: left; }
+    .filter-box__search-select ::-webkit-input-placeholder {
+      /* Edge */
+      font-size: 14px; }
+    .filter-box__search-select :-ms-input-placeholder {
+      /* Internet Explorer 10-11 */
+      font-size: 14px; }
+    .filter-box__search-select ::placeholder {
+      font-size: 14px; }
+    .filter-box__search-select .filter-box-select__value-container {
+      padding-left: 30px; }
+    .filter-box__search-select::before {
+      background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgdmlld0JveD0iMCAwIDEwIDEwIj4gICAgPGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4gICAgICAgIDxwYXRoIGQ9Ik0tNC00aDE4djE4SC00eiIvPiAgICAgICAgPHBhdGggZmlsbD0iIzAwMCIgZmlsbC1ydWxlPSJub256ZXJvIiBkPSJNOS43NTUgOC41NzNMNy41ODMgNi40MDFsLS4wMzctLjAzQTQuMTExIDQuMTExIDAgMSAwIDYuMzcgNy41NDZjLjAxLjAxMi4wMTguMDI1LjAzLjAzN2wyLjE3MiAyLjE3MmEuODM2LjgzNiAwIDAgMCAxLjE4Mi0xLjE4MnpNNC4xMTEgNi43OTdhMi42ODYgMi42ODYgMCAxIDEgMC01LjM3MiAyLjY4NiAyLjY4NiAwIDAgMSAwIDUuMzcyeiIvPiAgICA8L2c+PC9zdmc+);
+      content: "";
+      width: 18px;
+      height: 18px;
+      background-size: 70%;
+      background-position: center;
+      background-repeat: no-repeat;
+      margin: 10px 6px;
+      display: block;
+      position: absolute;
+      z-index: 1; }
+    .filter-box__search-select .filter-box-select__dropdown-indicator {
+      display: none; }
+  .filter-box.small-screens .d-head {
+    flex-direction: column;
+    align-items: normal; }
+    .filter-box.small-screens .d-head-title {
+      padding-bottom: 18px; }
+
+.d-head-filter__reset {
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  line-height: 1.33;
+  color: #704394;
+  margin-bottom: 10px;
+  display: inline-block; }
+
+.filter-box-select {
+  height: 42px; }
+  .filter-box-select__placeholder {
+    font-size: 13px;
+    color: #978e9d; }
+  .filter-box-select__indicator-separator {
+    display: none !important; }
+  .filter-box-select__indicator {
+    color: #301e3b !important; }
+  .filter-box-select input, .filter-box-select__single-value {
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    color: #000000; }
+  .filter-box-select__menu {
+    z-index: 12 !important; }
+  .filter-box-select__menu-list, .filter-box-select__control {
+    border-radius: 6px !important;
+    border: solid 1px #b1b1b1;
+    box-shadow: none !important; }
+  .filter-box-select__control:hover, .filter-box-select__control--is-focused {
+    border-color: #6f4194 !important; }
+  .filter-box-select__option--is-focused, .filter-box-select__option--is-selected {
+    background-color: #6f4194 !important;
+    color: white !important;
+    cursor: pointer; }
+  .filter-box-select__option {
+    text-align: left;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    font-weight: normal;
+    line-height: normal;
+    letter-spacing: normal;
+    color: #2f1d3d; }
+  .filter-box-select__input {
+    width: 100%; }
+    .filter-box-select__input input {
+      min-width: 100%; }
+
+.sorting__down, .sorting__up {
+  width: 0;
+  height: 0;
+  margin-top: 6px;
+  border-style: solid;
+  margin-left: 10px; }
+
+.sorting__down {
+  border-width: 6px 6px 0 6px;
+  border-color: #72468a transparent transparent transparent; }
+
+.sorting__up {
+  border-width: 0 6px 6px 6px;
+  border-color: transparent transparent #72468a transparent; }
+
